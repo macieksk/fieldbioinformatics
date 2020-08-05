@@ -71,7 +71,12 @@ class LongshotFilter:
             return False
 
         if v.num_het:
-            return False
+            ## Filtering only low heterozygotic
+            cnts = v.INFO['AC']
+            s = sum(cnts)
+            ps = [c/s for c in cnts]
+            if not any(p>0.50 and c>12 for p,c in list(zip(ps,cnts))[1:]):
+                return False
         return True
 
 def go(args):
