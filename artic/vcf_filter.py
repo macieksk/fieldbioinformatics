@@ -59,8 +59,10 @@ class MedakaFilter:
         return True
 
 class LongshotFilter:
-    def __init__(self, no_frameshifts):
+    def __init__(self, no_frameshifts,hetmf,hetmr):
         self.no_frameshifts = no_frameshifts
+        self.hetmr=hetmr
+        self.hetmf=hetmf
 
     def check_filter(self, v):
         depth = v.INFO['DP']
@@ -75,7 +77,8 @@ class LongshotFilter:
             cnts = v.INFO['AC']
             s = sum(cnts)
             ps = [c/s for c in cnts]
-            if not any(p>0.50 and c>12 for p,c in list(zip(ps,cnts))[1:]):
+            if not any(p>=self.hetmf and c>=self.hetmr #p>=0.50 and c>=12
+                       for p,c in list(zip(ps,cnts))[1:]):
                 return False
         return True
 
@@ -88,7 +91,7 @@ def go(args):
     elif args.medaka:
         filter = MedakaFilter(args.no_frameshifts)
     elif args.longshot:
-        filter = LongshotFilter(args.no_frameshifts)
+        filter = LongshotFilter(args.no_frameshifts,args.hetmf,args.hetmr)
     else:
         print("Please specify a VCF type, i.e. --nanopolish or --medaka\n")
         raise SystemExit
@@ -125,6 +128,8 @@ def main():
     parser.add_argument('--medaka', action='store_true')
     parser.add_argument('--longshot', action='store_true')
     parser.add_argument('--no-frameshifts', action='store_true')
+    parser.add_argument('--heterozygotic-min-fraction', '--hetmf', dest='hetmf', default=0.5, type=float)
+    parser.add_argument('--heterozygotic-min-reads', '--hetmr', dest='hetmr', default=12, type=int)
     parser.add_argument('inputvcf')
     parser.add_argument('output_pass_vcf')
     parser.add_argument('output_fail_vcf')
