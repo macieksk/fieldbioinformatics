@@ -123,13 +123,15 @@ def go(args):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--nanopolish', action='store_true')
     parser.add_argument('--medaka', action='store_true')
     parser.add_argument('--longshot', action='store_true')
     parser.add_argument('--no-frameshifts', action='store_true')
-    parser.add_argument('--heterozygotic-min-fraction', '--hetmf', dest='hetmf', default=0.5, type=float)
-    parser.add_argument('--heterozygotic-min-reads', '--hetmr', dest='hetmr', default=12, type=int)
+    parser.add_argument('--heterozygotic-min-fraction', '--hetmf', dest='hetmf', default=0.5, type=float,
+                        help = "minimal fraction of alternate allele reads for a heterozygotic variant to be accepted")
+    parser.add_argument('--heterozygotic-min-reads', '--hetmr', dest='hetmr', default=12, type=int,
+                        help = "minimal number of alternate allele reads for a heterozygotic variant to be accepted")
     parser.add_argument('inputvcf')
     parser.add_argument('output_pass_vcf')
     parser.add_argument('output_fail_vcf')
