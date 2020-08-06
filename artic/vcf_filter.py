@@ -46,16 +46,28 @@ class NanoporeFilter:
 
         return True
 
+
+def is_significant_alternate_heterozygotic(v,hetmf,hetmr):
+    cnts = v.INFO['AC']
+    s = sum(cnts)
+    ps = [c/s for c in cnts]
+    return any(p>=hetmf and c>=hetmr #p>=0.50 and c>=12
+               for p,c in list(zip(ps,cnts))[1:])
+
 class MedakaFilter:
-    def __init__(self, no_frameshifts):
+    def __init__(self, no_frameshifts,hetmf,hetmr):
         self.no_frameshifts = no_frameshifts
+        self.hetmr=hetmr
+        self.hetmf=hetmf
 
     def check_filter(self, v):
         if self.no_frameshifts and not in_frame(v):
             return False
 
         if v.num_het:
-            return False
+            ## Filtering only low heterozygotic
+            if not is_significant_alternate_heterozygotic(v,self.hetmf,self.hetmr):
+                return False
         return True
 
 class LongshotFilter:
@@ -74,11 +86,7 @@ class LongshotFilter:
 
         if v.num_het:
             ## Filtering only low heterozygotic
-            cnts = v.INFO['AC']
-            s = sum(cnts)
-            ps = [c/s for c in cnts]
-            if not any(p>=self.hetmf and c>=self.hetmr #p>=0.50 and c>=12
-                       for p,c in list(zip(ps,cnts))[1:]):
+            if not is_significant_alternate_heterozygotic(v,self.hetmf,self.hetmr):
                 return False
         return True
 
@@ -89,7 +97,7 @@ def go(args):
     if args.nanopolish:
         filter = NanoporeFilter(args.no_frameshifts)
     elif args.medaka:
-        filter = MedakaFilter(args.no_frameshifts)
+        filter = MedakaFilter(args.no_frameshifts,args.hetmf,args.hetmr)
     elif args.longshot:
         filter = LongshotFilter(args.no_frameshifts,args.hetmf,args.hetmr)
     else:
@@ -129,9 +137,9 @@ def main():
     parser.add_argument('--longshot', action='store_true')
     parser.add_argument('--no-frameshifts', action='store_true')
     parser.add_argument('--heterozygotic-min-fraction', '--hetmf', dest='hetmf', default=0.5, type=float,
-                        help = "minimal fraction of alternate allele reads for a heterozygotic variant to be accepted")
+                        help = "minimal fraction of alternate allele reads for a heterozygotic variant to be accepted (for medaka, and longshot filters)")
     parser.add_argument('--heterozygotic-min-reads', '--hetmr', dest='hetmr', default=12, type=int,
-                        help = "minimal number of alternate allele reads for a heterozygotic variant to be accepted")
+                        help = "minimal number of alternate allele reads for a heterozygotic variant to be accepted (for medaka, and longshot filters)")
     parser.add_argument('inputvcf')
     parser.add_argument('output_pass_vcf')
     parser.add_argument('output_fail_vcf')
